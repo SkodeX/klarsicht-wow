@@ -1,0 +1,19 @@
+## Interface: 11509, 20506, 50504, 16001
+## Title: Klarsicht
+## Notes: Lean spell tracking: cooldown, range, mana and proc glow - nothing else.
+## Notes-deDE: Schlankes Spell-Tracking: Abklingzeit, Reichweite, Mana und Proc-Leuchten - sonst nichts.
+## Author: Gerrit
+## Version: 0.2.0
+## SavedVariablesPerCharacter: KlarsichtCharDB
+## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
+## AddonCompartmentFunc: Klarsicht_OnAddonCompartmentClick
+## X-Website: https://github.com/SkodeX/klarsicht-wow
+
+Locale.lua
+Compat.lua
+Icon.lua
+Grid.lua
+Core.lua
+Presets.lua
+Profile.lua
+Config.lua
