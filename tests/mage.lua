@@ -208,6 +208,33 @@ if M.forever then
     M.combat = false
     M.Tick(0.2)
     check(counter.Cooldown.__cooldown ~= nil and counter.Timer:IsShown(), "back to own timer after combat")
+
+    -- Should Blizzard lock even "on cooldown yes/no": keep the last state, never guess
+    counter.entry.dimCD = true
+    M.Tick(0.2)
+    check(counter.__alpha == 0.45, "faded while on cooldown before the lock")
+    M.secretFlags, M.combat = true, true
+    M.Fire("SPELL_UPDATE_COOLDOWN")
+    M.Tick(0.2)
+    check(ns.diag.secretFlags > 0, "locked yes/no values are counted")
+    check(counter.__alpha == 0.45 and counter.Cooldown.__durationObject ~= nil, "icon keeps 'on cooldown', swipe still via Blizzard")
+    M.cooldowns[2139] = nil
+    M.Tick(0.2)
+    check(counter.__alpha == 0.45, "cooldown ended while locked: still the last known state")
+    local messages = {}
+    local printMessage = DEFAULT_CHAT_FRAME.AddMessage
+    DEFAULT_CHAT_FRAME.AddMessage = function(_, msg) messages[#messages + 1] = msg end
+    SlashCmdList.KLARSICHT("status")
+    DEFAULT_CHAT_FRAME.AddMessage = printMessage
+    local flagLine = L.STATUS_FLAGS:format(ns.diag.secretFlags)
+    local found = false
+    for _, msg in ipairs(messages) do
+        if msg:find(flagLine, 1, true) then found = true end
+    end
+    check(found, "status reports the locked yes/no values")
+    M.secretFlags, M.combat = false, false
+    M.Tick(0.2)
+    check(counter.__alpha == 1, "real state again once Blizzard shows it")
 end
 
 print(("%s %s/%s: %d checks passed"):format(M.scenario, M.forever and "forever" or "classic", M.locale, M.passed))

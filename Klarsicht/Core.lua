@@ -337,6 +337,7 @@ local function PrintStatus()
     ns.Print(format(L.STATUS_VERSION, getMetadata(ADDON, "Version") or "?", gameVersion, build, interface))
     ns.Print(format(L.STATUS_SECRETS, YesNo(issecretvalue ~= nil), YesNo(C.IsAddOnRestricted())))
     ns.Print(format(L.STATUS_COOLDOWNS, d.secretReads, d.durationOk, d.durationFailed))
+    if d.secretFlags > 0 then ns.Print(format(L.STATUS_FLAGS, d.secretFlags)) end
     if d.lastError then ns.Print(format(L.STATUS_ERROR, d.lastError)) end
     ns.Print(format(L.STATUS_AURAS, d.auraBlocked, d.procEvents))
     ns.Print(format(L.STATUS_LAYOUT, #db.spells, YesNo(db.locked), db.grid.size))

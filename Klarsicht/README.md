@@ -111,7 +111,7 @@ Forever läuft auf dem modernen Midnight-Client. Dort sind im Kampf manche Werte
 | Abklingzeit-Spirale | funktioniert (über Blizzards Duration-Objekt) |
 | Abklingzeit-Zahl | Blizzards eigene Countdown-Zahl im Klarsicht-Stil statt der von Klarsicht |
 | Reichweite, Mana, Proc-Leuchten (auch Talent-Procs) | funktionieren |
-| „Grau/Blasser während Abklingzeit“, „Nur wenn bereit“ | funktionieren (Blizzard gibt „aktiv ja/nein“ frei) |
+| „Grau/Blasser während Abklingzeit“, „Nur wenn bereit“ | funktionieren (Blizzard gibt „aktiv ja/nein“ frei). Sperrt Blizzard auch das, behalten die Symbole ihren letzten Stand; `/ks status` meldet es. |
 | Buffs und Debuffs | nur die, die Blizzard im Kampf freigibt. Die anderen behalten ihren Stand vom Kampfbeginn und aktualisieren sich nach dem Kampf. Auch „Leuchten, wenn es fehlt“ greift dann erst nach dem Kampf. |
 | Leuchten bei Buff (Zauber-Option) | kann im Kampf ausfallen, wenn Blizzard den Buff sperrt |
 

@@ -8,7 +8,7 @@ local C = {}
 ns.C = C
 
 -- Counters for /ks status, so a tester can tell which Forever paths ran.
-ns.diag = { secretReads = 0, durationOk = 0, durationFailed = 0, auraBlocked = 0, procEvents = 0 }
+ns.diag = { secretReads = 0, secretFlags = 0, durationOk = 0, durationFailed = 0, auraBlocked = 0, procEvents = 0 }
 local diag = ns.diag
 
 local C_Spell = C_Spell
@@ -62,17 +62,25 @@ function C.IsKnown(spellID)
 end
 
 -- Returns onCooldown, startTime, duration, secret.
--- With secret values only onCooldown is known (isActive/isOnGCD are never secret).
+-- With secret values only onCooldown is known: isActive/isOnGCD are documented
+-- as never secret. Newer builds may lock them too; then onCooldown is nil
+-- (unknown) and the caller keeps what it showed last.
 function C.GetCooldown(spellID)
     if C_Spell and C_Spell.GetSpellCooldown then
         local info = C_Spell.GetSpellCooldown(spellID)
         if not info then return false, 0, 0, false end
         if C.IsSecret(info.startTime) or C.IsSecret(info.duration) then
             diag.secretReads = diag.secretReads + 1
+            if C.IsSecret(info.isActive) or C.IsSecret(info.isOnGCD) then
+                diag.secretFlags = diag.secretFlags + 1
+                return nil, nil, nil, true
+            end
             return info.isActive == true and info.isOnGCD ~= true, nil, nil, true
         end
+        local enabled = info.isEnabled
+        if C.IsSecret(enabled) then enabled = true end
         local start, duration = info.startTime or 0, info.duration or 0
-        local active = info.isEnabled ~= false and start > 0 and duration > GCD_MAX
+        local active = enabled ~= false and start > 0 and duration > GCD_MAX
         return active, start, duration, false
     end
     local start, duration, enabled = GetSpellCooldown(spellID)
@@ -195,7 +203,7 @@ end
 
 local function IsSecretAura(aura)
     return C.IsSecret(aura.name) or C.IsSecret(aura.spellId) or C.IsSecret(aura.expirationTime)
-        or C.IsSecret(aura.duration) or C.IsSecret(aura.applications)
+        or C.IsSecret(aura.duration) or C.IsSecret(aura.applications) or C.IsSecret(aura.icon)
 end
 
 -- The readable auras on a unit for a filter ("HELPFUL" or "HARMFUL",

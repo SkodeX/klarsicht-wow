@@ -142,7 +142,7 @@ end
 
 function Icon:SetEntry(index, entry)
     self.index, self.entry = index, entry
-    self.secretMode, self.cdStart, self.cdDuration, self.cdEnd = nil, nil, nil, nil
+    self.secretMode, self.cdStart, self.cdDuration, self.cdEnd, self.lastOnCooldown = nil, nil, nil, nil, nil
     self.Cooldown:Clear()
     self:Resolve()
     self:ApplyLayout()
@@ -193,6 +193,7 @@ function Icon:ApplyLayout()
         -- Switching between spell and buff/debuff starts from a clean icon.
         self.track = e.track
         self.secretMode, self.cdStart, self.cdDuration, self.cdEnd, self.auraExpires = nil, nil, nil, nil, nil
+        self.lastOnCooldown = nil
         self.Cooldown:Clear()
         self.Cooldown:SetReverse(e.track ~= "spell")
         self.Count:SetText("")
@@ -247,6 +248,11 @@ end
 function Icon:UpdateCooldown(now, cooldownChanged)
     local e, spellID = self.entry, self.spellID
     local onCooldown, start, duration, secret = C.GetCooldown(spellID)
+    if onCooldown == nil then
+        -- Blizzard hid even "on cooldown yes/no": keep the last known state.
+        onCooldown = self.lastOnCooldown or false
+    end
+    self.lastOnCooldown = onCooldown
     if secret then
         if cooldownChanged or not self.secretMode then
             self.secretMode = true

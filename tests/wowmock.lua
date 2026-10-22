@@ -216,7 +216,8 @@ C_Spell = {
         local cd = M.cooldowns[id]
         local active = cd ~= nil and M.time < cd[1] + cd[2]
         if M.forever and M.combat then
-            return { startTime = SECRET, duration = SECRET, isEnabled = true, isActive = active, isOnGCD = false, modRate = SECRET }
+            return { startTime = SECRET, duration = SECRET, isEnabled = true,
+                isActive = M.secretFlags and SECRET or active, isOnGCD = M.secretFlags and SECRET or false, modRate = SECRET }
         end
         if not active then return { startTime = 0, duration = 0, isEnabled = true, isActive = false, modRate = 1 } end
         return { startTime = cd[1], duration = cd[2], isEnabled = true, isActive = true, modRate = 1 }
