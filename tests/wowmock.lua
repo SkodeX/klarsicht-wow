@@ -4,7 +4,7 @@
 -- method missing in one client fails the test.
 local METHODS = METHODS
 local M = { time = 1000, widgets = {}, eventFrames = {}, passed = 0,
-    cooldowns = {}, inRange = {}, noPower = {}, overlay = {}, buffs = {} }
+    cooldowns = {}, inRange = {}, noPower = {}, overlay = {}, buffs = {}, castTime = {}, cost = {}, auras = { player = {}, target = {} } }
 MOCK = M
 
 local SECRET = setmetatable({}, {
@@ -98,6 +98,7 @@ function special.SetDesaturated(self, desaturated) self.__desaturated = desatura
 function special.SetVertexColor(self, r, g, b, a) self.__color = { r, g, b, a } end
 function special.SetAlpha(self, alpha) self.__alpha = alpha end
 function special.SetTextColor(self, r, g, b) self.__textColor = { r, g, b } end
+function special.SetFont(self, path, size, flags) self.__font = { path, size, flags } end
 function special.EnableMouse(self, enabled) self.__mouse = enabled end
 function special.RegisterEvent(self, event)
     self.__events[event] = true
@@ -110,6 +111,7 @@ function special.SetCooldownFromDurationObject(self, duration)
 end
 function special.Clear(self) self.__cooldown, self.__durationObject = nil, nil end
 function special.SetHideCountdownNumbers(self, hide) self.__hideNumbers = hide end
+function special.SetReverse(self, reverse) self.__reverse = reverse end
 function special.Play(self) self.__playing = true end
 function special.Stop(self) self.__playing = false end
 
@@ -206,7 +208,8 @@ C_Spell = {
     GetSpellInfo = function(spell)
         local id = Lookup(spell)
         if not id then return nil end
-        return { name = SPELLS[id].name, iconID = SPELLS[id].icon, spellID = id }
+        return { name = SPELLS[id].name, iconID = SPELLS[id].icon, spellID = id,
+            castTime = M.castTime[id] or SPELLS[id].cast or 0 }
     end,
     GetSpellName = function(id) return SPELLS[id] and SPELLS[id].name end,
     GetSpellCooldown = function(id)
@@ -226,6 +229,11 @@ C_Spell = {
         if not M.target then return nil end
         return M.inRange[id]
     end,
+    GetSpellPowerCost = function(id)
+        local cost = M.cost[id] or (SPELLS[id] and SPELLS[id].cost)
+        if not cost then return nil end
+        return { { type = 0, cost = cost, minCost = cost } }
+    end,
     IsSpellUsable = function(id)
         if M.noPower[id] then return false, true end
         return true, false
@@ -240,6 +248,22 @@ C_UnitAuras = {
         return M.buffs[name] and { name = name } or nil
     end,
     GetPlayerAuraBySpellID = function(id) return M.buffs[id] and { spellId = id } or nil end,
+    -- M.auras.player / M.auras.target: { name, spellId, icon, helpful, mine, stacks, duration, expires }
+    GetAuraDataByIndex = function(unit, index, filter)
+        if M.forever and M.combat then return { name = SECRET, spellId = SECRET, expirationTime = SECRET } end
+        if unit == "target" and not M.target then return nil end
+        local helpful, mineOnly = filter:find("HELPFUL") ~= nil, filter:find("PLAYER") ~= nil
+        local n = 0
+        for _, aura in ipairs(M.auras[unit] or {}) do
+            if aura.helpful == helpful and (aura.mine or not mineOnly) then
+                n = n + 1
+                if n == index then
+                    return { name = aura.name, spellId = aura.spellId, icon = aura.icon, applications = aura.stacks or 0,
+                        duration = aura.duration or 0, expirationTime = aura.expires or 0 }
+                end
+            end
+        end
+    end,
 }
 C_EventUtils = { IsEventValid = function() return true end }
 

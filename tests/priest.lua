@@ -54,6 +54,6 @@ SlashCmdList.KLARSICHT("status")
 local expected = M.forever and "1.60.1 (70450)" or "1.15.9 (70003)"
 check(#messages == 5 and messages[1]:find("0.2.0", 1, true) and messages[1]:find(expected, 1, true),
     "status names addon and client version: " .. tostring(messages[1]))
-check(messages[5]:find(L.STATUS_LAYOUT:format(7, L.YES, 16), 1, true), "status layout line: " .. tostring(messages[5]))
+check(messages[5]:find(L.STATUS_LAYOUT:format(7, L.YES, 8), 1, true), "status layout line: " .. tostring(messages[5]))
 
 print(("%s %s/%s: %d checks passed"):format(M.scenario, M.forever and "forever" or "classic", M.locale, M.passed))

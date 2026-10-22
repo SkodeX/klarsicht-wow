@@ -1,12 +1,15 @@
 # Klarsicht
 
-Schlankes Spell-Tracking für World of Warcraft Classic und WoW Forever. Wie WeakAuras, nur für Zauber und ohne Einarbeitung: Du wählst die Zauber, Klarsicht zeigt sie als Symbole dort, wo du sie haben willst. Den Rest deines UIs lässt es in Ruhe.
+Schlankes Spell- und Buff-Tracking für World of Warcraft Classic und WoW Forever. Wie WeakAuras, nur für Zauber, Buffs und Debuffs und ohne Einarbeitung: Du wählst, was du sehen willst, Klarsicht zeigt es als Symbole dort, wo du sie haben willst. Den Rest deines UIs lässt es in Ruhe.
 
-- **Abklingzeit** als Spirale und Zahl
+- **Abklingzeit** als Spirale und Zahl, auf Wunsch grau oder blasser, solange sie läuft
 - **Grau** außer Reichweite, **blau** ohne Mana
-- **Leuchten** bei einem Proc, wenn der Zauber im Kampf bereit ist, oder solange ein Buff aktiv ist
-- **Sichtbarkeit** pro Zauber: immer, nur im Kampf, nur mit feindlichem Ziel; auf Wunsch nur, wenn bereit, oder nur während der Abklingzeit
-- **Verschieben** per Drag and Drop mit Gitter und Einrasten
+- **Leuchten** bei einem Proc (auch Talent-Procs wie Missile Barrage), wenn der Zauber im Kampf bereit ist, oder solange ein Buff aktiv ist
+- **Buffs und Debuffs** auf dir oder deinem Ziel: Restzeit, Stapel, Erinnerung, wenn etwas fehlt; Auswahl per Klick aus dem, was gerade aktiv ist
+- **Sichtbarkeit** pro Symbol: immer, nur im Kampf, nur mit feindlichem Ziel; Live-Vorschau, solange die Einstellungen offen sind
+- **Verschieben und Größe** per Maus, mit Gitter, Magnet und Andocken an andere Symbole
+- **Rückgängig** (3 Schritte) und **Zurücksetzen** pro Symbol oder für alle Positionen
+- **Zahlen-Stil**: Farbe, Rand und Größe
 - **Profile** als Textzeile exportieren und importieren, z. B. für Freunde oder Twinks
 - **Klassen-Vorschläge** für Magier und Priester, Volksfähigkeiten für alle Klassen
 
@@ -30,7 +33,8 @@ Schlankes Spell-Tracking für World of Warcraft Classic und WoW Forever. Wie Wea
 | Befehl | Wirkung |
 |---|---|
 | `/ks` | Einstellungsfenster öffnen |
-| `/ks unlock` / `/ks lock` | Symbole mit Gitter verschieben / fixieren |
+| `/ks unlock` / `/ks lock` | Symbole mit Gitter verschieben und vergrößern / fixieren |
+| `/ks undo` | letzten Schritt rückgängig machen (bis zu 3) |
 | `/ks export` / `/ks import` | Profil als Text kopieren / laden |
 | `/ks status` | Version und Diagnose für Fehlerberichte |
 
@@ -43,7 +47,7 @@ Klarsicht nutzt nur Blizzards offizielle Addon-Schnittstelle und zeigt nur an. E
 | Ordner | Inhalt |
 |---|---|
 | `Klarsicht/` | das Addon; genau dieser Ordner kommt ins Spiel |
-| `tests/` | Tests: das Addon läuft in einer Lua-VM gegen eine nachgebaute WoW-API, für Classic und Forever, auf Deutsch und Englisch |
+| `tests/` | Tests: das Addon läuft in einer Lua-VM gegen eine nachgebaute WoW-API, für Classic und Forever, auf Deutsch und Englisch (Szenarien: Magier, Priester, Layout, Buffs/Debuffs) |
 | `scripts/package.ps1` | baut `dist/Klarsicht-<Version>.zip` aus dem Addon-Ordner |
 
 ## Entwicklung

@@ -1,6 +1,6 @@
 # Klarsicht in WoW Forever testen
 
-Danke fürs Testen! Das dauert etwa 15 Minuten. Am Ende brauchen wir einen Screenshot vom Chat nach `/ks status` und Screenshots von Fehlermeldungen, falls welche kamen.
+Danke fürs Testen! Das dauert etwa 20 Minuten. Am Ende brauchen wir einen Screenshot vom Chat nach `/ks status` und Screenshots von Fehlermeldungen, falls welche kamen.
 
 ## Installation
 
@@ -27,9 +27,13 @@ Bitte zu jedem Punkt kurz notieren: klappt oder klappt nicht.
 | 11 | Einen Zauber auswählen, „Solange dieser Buff aktiv ist“ anhaken und den Namen eines eigenen Buffs eintragen; Buff außerhalb und im Kampf aktiv haben | Leuchtet außerhalb des Kampfes. Im Kampf darf es ausfallen, bitte melden, was passiert |
 | 12 | Bei einem Zauber „Anzeigen: Nur im Kampf“ wählen, Fenster schließen | Symbol erscheint nur im Kampf |
 | 13 | „Blasser während Abklingzeit“ anhaken, im Kampf wirken | Symbol wird blasser, solange die Abklingzeit läuft |
-| 14 | `/ks unlock`, Symbole ziehen, mit Alt ziehen, mit Shift ziehen, dann `/ks lock` | Gitter erscheint, Symbol rastet ein; Alt bewegt alle; Shift schiebt frei; nach `lock` ist das Gitter weg |
-| 15 | „Profil exportieren“, Text mit Strg+C kopieren; dann „Profil importieren“, einfügen, „Ersetzen“ | Alles ist wieder genau wie vorher. Den Text bitte auch an uns schicken |
-| 16 | `/reload` | Alle Einstellungen und Positionen bleiben erhalten |
+| 14 | `/ks unlock`, Symbole ziehen, mit Alt ziehen, mit Shift ziehen, ein Symbol neben ein anderes ziehen, dann `/ks lock` | Gitter erscheint, Symbol rastet nahe der Linien ein; Alt bewegt alle; Shift schiebt frei; neben einem Symbol dockt es exakt an; nach `lock` ist das Gitter weg |
+| 15 | Entsperrt die Ecke unten rechts eines Symbols ziehen, danach „Rückgängig“ | Symbol wird größer/kleiner; Rückgängig macht es wieder wie vorher |
+| 16 | Als Magier mit Missile Barrage oder Freizaubern: auf den Proc warten (Arkane Geschosse im Klarsicht) | Arkane Geschosse leuchtet, solange sie nichts kosten |
+| 17 | „Buff/Debuff“ klicken und einen eigenen Buff wählen (z. B. Arkane Intelligenz, Inneres Feuer) | Symbol mit Restzeit, bei Stapeln die Zahl unten rechts |
+| 18 | Einen eigenen Debuff auf einen Gegner legen und als „Debuff auf Ziel“ verfolgen; einmal außerhalb, einmal im Kampf beobachten | Außerhalb des Kampfes zählt die Restzeit runter. Im Kampf bitte melden: läuft sie weiter, oder bleibt das Symbol stehen? |
+| 19 | „Profil exportieren“, Text mit Strg+C kopieren; dann „Profil importieren“, einfügen, „Ersetzen“ | Alles ist wieder genau wie vorher. Den Text bitte auch an uns schicken |
+| 20 | `/reload` | Alle Einstellungen und Positionen bleiben erhalten |
 
 ## Zurückmelden
 

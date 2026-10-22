@@ -138,6 +138,26 @@ function C.IsUsable(spellID)
     return usable and true or false, noPower and true or false
 end
 
+-- Current cast time (ms) and total resource cost, both after talents and
+-- procs; nil if the client hides them.
+function C.GetCastAndCost(spellID)
+    local castTime, cost = 0, 0
+    if C_Spell and C_Spell.GetSpellInfo then
+        local info = C_Spell.GetSpellInfo(spellID)
+        castTime = info and info.castTime or 0
+    end
+    local getCost = C_Spell and C_Spell.GetSpellPowerCost or GetSpellPowerCost
+    local costs = getCost and getCost(spellID)
+    if costs then
+        for _, entry in ipairs(costs) do
+            if C.IsSecret(entry.cost) then return nil end
+            cost = cost + (entry.cost or 0)
+        end
+    end
+    if C.IsSecret(castTime) then return nil end
+    return castTime, cost
+end
+
 function C.IsOverlayed(spellID)
     local isOverlayed = C_SpellActivationOverlay and C_SpellActivationOverlay.IsSpellOverlayed or IsSpellOverlayed
     if not isOverlayed then return false end
@@ -171,6 +191,44 @@ function C.HasPlayerBuff(aura)
         return AuraUtil.FindAuraByName(aura, "player", "HELPFUL") ~= nil
     end
     return false
+end
+
+local function IsSecretAura(aura)
+    return C.IsSecret(aura.name) or C.IsSecret(aura.spellId) or C.IsSecret(aura.expirationTime)
+        or C.IsSecret(aura.duration) or C.IsSecret(aura.applications)
+end
+
+-- The readable auras on a unit for a filter ("HELPFUL" or "HARMFUL",
+-- optionally with "|PLAYER" for own ones). Second value: true when the client
+-- hid some of them (Forever combat), so a missing aura may just be hidden.
+function C.GetAuras(unit, filter)
+    if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return {}, false end
+    local auras, partial = {}, false
+    for index = 1, 40 do
+        local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, index, filter)
+        if not ok or C.IsSecret(aura) then
+            partial = true
+            break
+        end
+        if not aura then break end
+        if IsSecretAura(aura) then
+            partial = true
+        else
+            auras[#auras + 1] = aura
+        end
+    end
+    if partial then diag.auraBlocked = diag.auraBlocked + 1 end
+    return auras, partial
+end
+
+-- Finds an aura by name (covers every rank) or spell ID. Second value: true
+-- when it was not found but may be among the hidden ones.
+function C.FindAura(unit, filter, name, spellID)
+    local auras, partial = C.GetAuras(unit, filter)
+    for _, aura in ipairs(auras) do
+        if aura.name == name or (spellID and aura.spellId == spellID) then return aura, false end
+    end
+    return nil, partial
 end
 
 function C.RegisterEventSafe(frame, event)

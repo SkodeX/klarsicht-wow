@@ -45,7 +45,7 @@ function run(scenario, flavor, locale) {
 }
 
 let failed = 0;
-for (const scenario of ['mage', 'priest', 'layout']) {
+for (const scenario of ['mage', 'priest', 'layout', 'auras']) {
   for (const flavor of ['classic', 'forever']) {
     for (const locale of ['deDE', 'enUS']) {
       try { run(scenario, flavor, locale); }

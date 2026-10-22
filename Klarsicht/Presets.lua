@@ -57,7 +57,7 @@ ns.RACIAL_PRESETS = {
     20572,  -- Blood Fury
 }
 
-local SIZE, GAP, ROW_Y = 40, 4, -180
+local SIZE, ROW_SPACING = 40, 8
 
 function ns.LoadPreset()
     local _, class = UnitClass("player")
@@ -76,18 +76,20 @@ function ns.LoadPreset()
         return
     end
 
-    -- One centered row; below the existing icons if there are any.
-    local y = ROW_Y
+    -- One centered row (one undo step); below the existing icons if there are any.
+    ns.PushUndo()
+    local y = ns.ROW_Y
     for _, entry in ipairs(ns.db.spells) do
-        y = min(y, entry.y - entry.size - 2 * GAP)
+        y = min(y, entry.y - entry.size - ROW_SPACING)
     end
-    local width = #new * (SIZE + GAP) - GAP
-    local firstIndex
-    for i, spellID in ipairs(new) do
-        local x = floor(-width / 2 + SIZE / 2 + (i - 1) * (SIZE + GAP) + 0.5)
-        local index = ns.AddSpell(spellID, { size = SIZE, x = x, y = y })
+    local added, firstIndex = {}, nil
+    for _, spellID in ipairs(new) do
+        local index = ns.AddSpell(spellID, { size = SIZE }, true)
         firstIndex = firstIndex or index
+        added[#added + 1] = ns.db.spells[index]
     end
+    ns.ArrangeRow(added, y)
+    ns.RebuildIcons()
     ns.Print(format(L.PRESET_ADDED, #new))
     return firstIndex
 end

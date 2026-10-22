@@ -5,19 +5,29 @@ local UPDATE_INTERVAL = 0.1
 
 ns.DEFAULTS = {
     size = 40, x = 0, y = -160,
-    range = true, usable = true, swipe = true, timer = true, dimCD = false,
+    range = true, usable = true, swipe = true, timer = true, dimCD = false, grayCD = false,
     glowProc = true, glowReady = false, glowAuraOn = false, glowAura = "",
     show = "always", when = "any",
+    -- What the icon follows: a spell's cooldown, or a buff/debuff (see TRACK_MODES)
+    track = "spell", mine = true, auraShow = "active", glowMissing = false, glowExpiring = false,
 }
+ns.TRACK_MODES = { "spell", "playerBuff", "playerDebuff", "targetDebuff", "targetBuff" }
+ns.AURA_SHOW_MODES = { "active", "missing", "always" }
+-- Cooldown number look, shared by all icons
+ns.STYLE_DEFAULTS = { color = "white", outline = "thin", scale = 100 }
 ns.SHOW_MODES = { "always", "combat", "target", "combatOrTarget" }
 ns.WHEN_MODES = { "any", "ready", "cooldown" }
 
 ns.icons = {}
 ns.procs = {}       -- spell ID and spell name -> true while Blizzard shows a proc alert
 
+local UNDO_STEPS = 3
+local UNDO_MERGE_SECONDS = 1.5
+
 local db
 local cooldownChanged = true
 local state = {}
+local undoStack, lastUndoTag, lastUndoTime = {}, nil, 0
 
 function ns.Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffKlarsicht|r: " .. msg)
@@ -38,6 +48,10 @@ local function InitDB()
     db.grid = db.grid or {}
     for key, value in pairs(ns.GRID_DEFAULTS) do
         if db.grid[key] == nil then db.grid[key] = value end
+    end
+    db.style = db.style or {}
+    for key, value in pairs(ns.STYLE_DEFAULTS) do
+        if db.style[key] == nil then db.style[key] = value end
     end
     -- Options added in later versions get their default.
     for _, entry in ipairs(db.spells) do
@@ -67,6 +81,52 @@ function ns.UpdateAll()
     for i = 1, #db.spells do
         ns.icons[i]:Update(now, state)
     end
+    ns.OnStateTick()
+end
+
+---------------------------------------------------------------------------
+-- Undo: the last few versions of the spell list (not grid or number style)
+---------------------------------------------------------------------------
+
+local function CopySpells()
+    local copy = {}
+    for i, entry in ipairs(db.spells) do
+        local entryCopy = {}
+        for key, value in pairs(entry) do entryCopy[key] = value end
+        copy[i] = entryCopy
+    end
+    return copy
+end
+
+-- Call before changing the spell list. Changes with the same tag in quick
+-- succession (one slider drag, typing a number) become one undo step.
+function ns.PushUndo(tag)
+    local now = GetTime()
+    if tag and tag == lastUndoTag and now - lastUndoTime < UNDO_MERGE_SECONDS then
+        lastUndoTime = now
+        return
+    end
+    lastUndoTag, lastUndoTime = tag, now
+    tinsert(undoStack, CopySpells())
+    if #undoStack > UNDO_STEPS then tremove(undoStack, 1) end
+    ns.OnUndoChanged()
+end
+
+function ns.UndoCount()
+    return #undoStack
+end
+
+function ns.Undo()
+    local snapshot = tremove(undoStack)
+    if not snapshot then
+        ns.Print(L.UNDO_EMPTY)
+        return false
+    end
+    lastUndoTag = nil
+    db.spells = snapshot
+    ns.RebuildIcons()
+    ns.OnUndoChanged()
+    return true
 end
 
 function ns.RefreshMovers()
@@ -100,14 +160,84 @@ function ns.ApplyEntry(index)
     ns.UpdateAll()
 end
 
-function ns.FindSpell(spellID, name)
+-- After a change to db.style
+function ns.ApplyStyle()
+    for i = 1, #db.spells do ns.icons[i]:ApplyLayout() end
+    ns.UpdateAll()
+end
+
+-- All icons as one centered row below the character, sizes unchanged.
+function ns.ResetPositions()
+    if #db.spells == 0 then return end
+    ns.PushUndo()
+    ns.ArrangeRow(db.spells, ns.ROW_Y)
+    for i = 1, #db.spells do ns.icons[i]:ApplyPosition() end
+    ns.RefreshConfig()
+end
+
+-- Back to the default options; the icon keeps its place.
+function ns.ResetSpell(index)
+    local entry = db.spells[index]
+    if not entry then return end
+    ns.PushUndo()
+    local keep = { id = entry.id, name = entry.name, icon = entry.icon, x = entry.x, y = entry.y,
+        track = entry.track, mine = entry.mine }
+    for key in pairs(entry) do entry[key] = nil end
+    for key, value in pairs(ns.DEFAULTS) do entry[key] = value end
+    for key, value in pairs(keep) do entry[key] = value end
+    ns.ApplyEntry(index)
+    ns.RefreshConfig()
+end
+
+-- The same spell may be tracked twice: once for its cooldown, once as a buff.
+function ns.FindSpell(spellID, name, track)
+    track = track or "spell"
     for i, entry in ipairs(db.spells) do
-        if entry.id == spellID or (name and entry.name == name) then return i end
+        if entry.track == track and ((spellID and entry.id == spellID) or (name and entry.name == name)) then
+            return i
+        end
     end
 end
 
+local function PlaceAfterLast(entry)
+    local last = db.spells[#db.spells]
+    if last then
+        entry.size = last.size
+        entry.x = last.x + last.size + db.grid.gap
+        entry.y = last.y
+    end
+end
+
+-- A buff or debuff, by name; spellID and icon are optional (the aura picker
+-- knows them, a typed name does not).
+function ns.AddAura(name, track, spellID, icon)
+    local existing = ns.FindSpell(spellID, name, track)
+    if existing then
+        ns.Print(format(L.ALREADY, name))
+        return existing
+    end
+    ns.PushUndo()
+    local entry = ns.NewEntry()
+    PlaceAfterLast(entry)
+    entry.id, entry.name, entry.icon, entry.track = spellID, name, icon, track
+    entry.mine = track == "targetDebuff" or track == "targetBuff"
+    tinsert(db.spells, entry)
+    ns.RebuildIcons()
+    ns.Print(format(L.ADDED, name))
+    return #db.spells
+end
+
+-- Text from the add box: a spell if the spellbook knows it, otherwise a buff.
+function ns.AddFromText(text)
+    local _, _, spellID = C.GetSpellInfo(text)
+    if spellID or tonumber(text) then return ns.AddSpell(text) end
+    ns.Print(format(L.NOT_A_SPELL, text))
+    return ns.AddAura(text, "playerBuff")
+end
+
 -- input: spell ID, numeric string or name. Returns the new (or existing) index.
-function ns.AddSpell(input, fields)
+-- skipUndo: the caller already saved an undo step (class suggestions).
+function ns.AddSpell(input, fields, skipUndo)
     local name, _, spellID = C.GetSpellInfo(input)
     if not spellID then
         ns.Print(format(L.NOT_FOUND, tostring(input)))
@@ -119,14 +249,10 @@ function ns.AddSpell(input, fields)
         return existing
     end
 
+    if not skipUndo then ns.PushUndo() end
     local entry = ns.NewEntry()
     entry.id, entry.name = spellID, name
-    local last = db.spells[#db.spells]
-    if last then
-        entry.size = last.size
-        entry.x = last.x + last.size + 4
-        entry.y = last.y
-    end
+    PlaceAfterLast(entry)
     if fields then
         for key, value in pairs(fields) do entry[key] = value end
     end
@@ -137,6 +263,7 @@ function ns.AddSpell(input, fields)
 end
 
 function ns.RemoveSpell(index)
+    ns.PushUndo()
     tremove(db.spells, index)
     ns.RebuildIcons()
 end
@@ -182,6 +309,7 @@ driver:SetScript("OnEvent", function(_, event, arg1)
         ns.UpdateGrid()
     elseif event == "SPELLS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then
         ns.ResolveAll()
+        ns.RefreshConfig()
         cooldownChanged = true
     elseif event == "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW" then
         SetProc(arg1, true)
@@ -226,6 +354,8 @@ SlashCmdList.KLARSICHT = function(msg)
         ns.OpenProfileDialog(msg)
     elseif msg == "status" then
         PrintStatus()
+    elseif msg == "undo" then
+        ns.Undo()
     elseif msg == "help" or msg == "?" then
         ns.Print(L.HELP)
     else

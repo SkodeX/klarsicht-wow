@@ -50,10 +50,22 @@ check(#spells() == 6 and spells()[6].id == 25306, "name resolves to the highest 
 addBox:SetText("133")
 M.FireScript(addBox, "OnEnterPressed")
 check(#spells() == 6, "other rank of the same spell is a duplicate")
+local messages = {}
+local printMessage = DEFAULT_CHAT_FRAME.AddMessage
+DEFAULT_CHAT_FRAME.AddMessage = function(self, msg)
+    messages[#messages + 1] = msg
+    printMessage(self, msg)
+end
 addBox:SetText("Quatsch")
 M.FireScript(addBox, "OnEnterPressed")
-check(#spells() == 6, "unknown name is rejected")
-check(M.lastMessage:find("Quatsch"), "unknown name is reported")
+DEFAULT_CHAT_FRAME.AddMessage = printMessage
+check(#spells() == 7 and spells()[7].track == "playerBuff" and spells()[7].name == "Quatsch",
+    "a name the spellbook does not know becomes a buff entry")
+check(messages[1]:find(L.NOT_A_SPELL:format("Quatsch"), 1, true), "and the chat says so")
+addBox:SetText("99999")
+M.FireScript(addBox, "OnEnterPressed")
+check(#spells() == 7, "an unknown ID is rejected")
+ns.RemoveSpell(7)
 
 -- Drag a spell from the spellbook onto the drop zone
 local drop = M.Find("Button", function(w) return w.__scripts.OnReceiveDrag ~= nil end)
@@ -68,14 +80,12 @@ local slider = M.Find("Slider")
 slider:SetValue(55)
 check(spells()[7].size == 55 and ns.icons[7].__w == 55, "size slider resizes the icon")
 xBox:SetText("-120")
-M.FireScript(xBox, "OnEnterPressed")
-check(spells()[7].x == -120, "X box moves the icon")
+M.FireScript(xBox, "OnTextChanged", true)
+check(spells()[7].x == -120, "X box moves the icon while typing")
 click(buttonWithText(L.CENTER))
 check(spells()[7].x == 0, "center button")
 
-local checks = M.FindAll("CheckButton")
-check(#checks == 10, "eight spell checkboxes plus two grid checkboxes")
-local dimCheck = checks[5]
+local dimCheck = M.Find("CheckButton", function(w) return w.label.__text == L.DIM_CD end)
 dimCheck:SetChecked(true)
 click(dimCheck)
 check(spells()[7].dimCD == true, "fade-on-cooldown checkbox")
@@ -84,10 +94,14 @@ local showCycle = buttonWithText(L.SHOW_always)
 click(showCycle)
 check(spells()[7].show == "combat", "show mode cycles to combat")
 check(showCycle.__text == L.SHOW_combat, "cycle button relabels")
+M.Tick(0.2)
+check(ns.icons[7]:IsShown() and ns.icons[7].__alpha == 0.25, "hidden icon stays as a faint ghost while the window is open")
+local stateText = L.HIDDEN_NOW:format(L.REASON_combat)
+check(M.Find("FontString", function(w) return w.__text == stateText end), "window says live why it is hidden")
 
 -- Glow while a buff is up
 auraBox:SetText("Freizaubern")
-M.FireScript(auraBox, "OnEnterPressed")
+M.FireScript(auraBox, "OnTextChanged", true)
 check(spells()[7].glowAura == "Freizaubern" and spells()[7].glowAuraOn, "buff glow set")
 M.buffs.Freizaubern = true
 M.Tick(0.2)

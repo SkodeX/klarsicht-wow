@@ -3,7 +3,7 @@
 ## Notes: Lean spell tracking: cooldown, range, mana and proc glow - nothing else.
 ## Notes-deDE: Schlankes Spell-Tracking: Abklingzeit, Reichweite, Mana und Proc-Leuchten - sonst nichts.
 ## Author: Gerrit
-## Version: 0.2.0
+## Version: 0.3.0
 ## SavedVariablesPerCharacter: KlarsichtCharDB
 ## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
 ## AddonCompartmentFunc: Klarsicht_OnAddonCompartmentClick

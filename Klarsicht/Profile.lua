@@ -51,7 +51,13 @@ end
 function ns.ExportProfile()
     local keys, spells = SortedKeys(), {}
     for _, entry in ipairs(ns.db.spells) do
-        local fields = { "id=" .. EncodeValue(entry.id) }
+        -- Buffs/debuffs also travel by name: some have no ID, and IDs can
+        -- differ between clients while the name matches.
+        local fields = {}
+        if entry.id then fields[1] = "id=" .. EncodeValue(entry.id) end
+        if entry.track ~= "spell" or not entry.id then
+            fields[#fields + 1] = "name=" .. Escape(entry.name or "")
+        end
         for _, key in ipairs(keys) do
             if entry[key] ~= ns.DEFAULTS[key] then
                 fields[#fields + 1] = key .. "=" .. EncodeValue(entry[key])
@@ -66,7 +72,8 @@ end
 local function ParseSpell(chunk)
     local entry = {}
     for key, value in chunk:gmatch("(%w+)=([^,]*)") do
-        local default = key == "id" and 0 or ns.DEFAULTS[key]
+        local default = ns.DEFAULTS[key]
+        if key == "id" then default = 0 elseif key == "name" then default = "" end
         local kind = type(default)
         if kind == "number" then
             entry[key] = tonumber(value)
@@ -77,12 +84,16 @@ local function ParseSpell(chunk)
         end
     end
     local id = entry.id
-    if not id or id < 1 or id > 9999999 or id % 1 ~= 0 then return nil end
+    if id and (id < 1 or id > 9999999 or id % 1 ~= 0) then return nil end
+    if entry.track and not Contains(ns.TRACK_MODES, entry.track) then return nil end
+    -- Only buffs/debuffs may come without an ID.
+    if not id and not (entry.name and entry.name ~= "" and entry.track and entry.track ~= "spell") then return nil end
     for key, range in pairs(LIMITS) do
         if entry[key] then entry[key] = min(range[2], max(range[1], floor(entry[key] + 0.5))) end
     end
     if entry.show and not Contains(ns.SHOW_MODES, entry.show) then entry.show = nil end
     if entry.when and not Contains(ns.WHEN_MODES, entry.when) then entry.when = nil end
+    if entry.auraShow and not Contains(ns.AURA_SHOW_MODES, entry.auraShow) then entry.auraShow = nil end
     return entry
 end
 
@@ -106,11 +117,12 @@ end
 function ns.ImportProfile(text, replace)
     local entries, err = ns.ParseProfile(text)
     if not entries then return nil, err end
+    ns.PushUndo()
     if replace then ns.db.spells = {} end
     local added, skipped = 0, 0
     for _, imported in ipairs(entries) do
-        local name = C.GetSpellName(imported.id)
-        if not name or ns.FindSpell(imported.id, name) then
+        local name = imported.id and C.GetSpellName(imported.id) or imported.name
+        if not name or ns.FindSpell(imported.id, name, imported.track) then
             skipped = skipped + 1
         else
             local entry = ns.NewEntry()
